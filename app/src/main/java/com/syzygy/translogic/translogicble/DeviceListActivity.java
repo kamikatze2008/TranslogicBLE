@@ -38,16 +38,17 @@ public class DeviceListActivity extends Activity {
         setContentView(R.layout.device_list);
         // Set result CANCELED in case the user backs out
         setResult(Activity.RESULT_CANCELED);
-        // Initialize the button to perform device discovery
-        Button scanButton = (Button) findViewById(R.id.button_scan);
-        scanButton.setOnClickListener(v -> {
-            doDiscovery();
-            v.setVisibility(View.GONE);
-        });
         // Initialize array adapters. One for already paired devices and
         // one for newly discovered devices
         mPairedDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_name);
         mNewDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_name);
+        // Initialize the button to perform device discovery
+        Button scanButton = (Button) findViewById(R.id.button_scan);
+        scanButton.setOnClickListener(v -> {
+            mPairedDevicesArrayAdapter.clear();
+            mNewDevicesArrayAdapter.clear();
+            doDiscovery();
+        });
         // Find and set up the ListView for paired devices
         ListView pairedListView = (ListView) findViewById(R.id.paired_devices);
         pairedListView.setAdapter(mPairedDevicesArrayAdapter);
@@ -107,17 +108,20 @@ public class DeviceListActivity extends Activity {
     // The on-click listener for all devices in the ListViews
     private AdapterView.OnItemClickListener mDeviceClickListener = new AdapterView.OnItemClickListener() {
         public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
-            // Cancel discovery because it's costly and we're about to connect
-            mBtAdapter.cancelDiscovery();
             // Get the device MAC address, which is the last 17 chars in the View
             String info = ((TextView) v).getText().toString();
-            String address = info.substring(info.length() - 17);
-            // Create the result Intent and include the MAC address
-            Intent intent = new Intent();
-            intent.putExtra(EXTRA_DEVICE_ADDRESS, address);
-            // Set result and finish this Activity
-            setResult(Activity.RESULT_OK, intent);
-            finish();
+            if (!(getResources().getText(R.string.none_paired).equals(info) ||
+                    getResources().getText(R.string.none_found).equals(info))) {
+                String address = info.substring(info.length() - 17);
+                // Cancel discovery because it's costly and we're about to connect
+                mBtAdapter.cancelDiscovery();
+                // Create the result Intent and include the MAC address
+                Intent intent = new Intent();
+                intent.putExtra(EXTRA_DEVICE_ADDRESS, address);
+                // Set result and finish this Activity
+                setResult(Activity.RESULT_OK, intent);
+                finish();
+            }
         }
     };
 
@@ -133,6 +137,11 @@ public class DeviceListActivity extends Activity {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // If it's already paired, skip it, because it's been listed already
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                    for (int i = 0; i < mNewDevicesArrayAdapter.getCount() - 1; i++) {
+                        if (("" + device.getName() + "\n" + device.getAddress()).equals(mNewDevicesArrayAdapter.getItem(i))) {
+                            return;
+                        }
+                    }
                     mNewDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 }
                 // When discovery is finished, change the Activity title

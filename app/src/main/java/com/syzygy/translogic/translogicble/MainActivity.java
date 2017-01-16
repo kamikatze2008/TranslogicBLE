@@ -16,9 +16,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import java.lang.ref.WeakReference;
-import java.util.Arrays;
-
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -60,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 //            if (target != null) target.do();
 //
 
-            // The Handler that gets information back from the BluetoothChatService
+    // The Handler that gets information back from the BluetoothChatService
     private final Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -73,7 +70,16 @@ public class MainActivity extends AppCompatActivity {
 //                    messageList.add(new androidRecyclerView.Message(counter++, writeMessage, "Me"));
                     break;
                 case MESSAGE_READ:
-//                    byte[] readBuf = (byte[]) msg.obj;
+                    byte[] readBuf = (byte[]) msg.obj;
+                    CommandParser.Command receivedCommand = CommandParser.parseValue(readBuf);
+                    switch (receivedCommand) {
+                        case PARAMETERS:
+                            insertValueIfPossible(receivedCommand.getValue());
+                            break;
+                        case MEASUREMENT:
+                            //TODO
+                            break;
+                    }
                     // construct a string from the valid bytes in the buffer
 //                    String readMessage = new String(readBuf, 0, msg.arg1);
 //                    mAdapter.notifyDataSetChanged();
@@ -140,7 +146,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-//        unregisterReceiver(discoveringDevicesBroadcastReceiver);
+        if (bluetoothService != null) {
+            bluetoothService.stop();
+        }
         super.onDestroy();
     }
 
@@ -185,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void transferMessageToOutputString(byte[] bytes) {
         if (bytes != null) {
-            insertValueIfPossible(new String(Arrays.copyOfRange(bytes, 3, 7)));
+            insertValueIfPossible("2");
         }
     }
 
