@@ -6,7 +6,6 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -16,6 +15,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
@@ -44,51 +44,53 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
 
-//    class SafeHandler extends Handler {
-//        private final WeakReference<MainActivity> mTarget;
-//
-//        SafeHandler(MainActivity target) {
-//            mTarget = new WeakReference<MainActivity>(target);
-//        }
-//
-//        void doSomething() {
-//            MainActivity target = mTarget.get();
-//            if (target != null) target.do();
-//
+    private IncomingHandler handler = new IncomingHandler(this);
 
-    // The Handler that gets information back from the BluetoothChatService
-    private final Handler handler = new Handler() {
+    static class IncomingHandler extends Handler {
+        private final WeakReference<MainActivity> mainActivityWeakReference;
+
+        IncomingHandler(MainActivity service) {
+            mainActivityWeakReference = new WeakReference<>(service);
+        }
+
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MESSAGE_WRITE:
+            MainActivity mainActivity = mainActivityWeakReference.get();
+            if (mainActivity != null) {
+                mainActivity.handleMessage(msg);
+            }
+        }
+    }
+
+    public void handleMessage(Message msg) {
+        switch (msg.what) {
+            case MESSAGE_WRITE:
 //                    byte[] writeBuf = (byte[]) msg.obj;
-                    // construct a 0string from the buffer
+                // construct a 0string from the buffer
 //                    String writeMessage = new String(writeBuf);
 //                    mAdapter.notifyDataSetChanged();
 //                    messageList.add(new androidRecyclerView.Message(counter++, writeMessage, "Me"));
-                    break;
-                case MESSAGE_READ:
-                    int bytes = msg.arg1;
-                    byte[] readBuf = Arrays.copyOfRange(((byte[]) msg.obj), 0, bytes);
-                    Toast.makeText(MainActivity.this, new String(readBuf), Toast.LENGTH_LONG).show();
-                    CommandParser.Command receivedCommand = CommandParser.parseValue(readBuf);
-                    if (receivedCommand != CommandParser.Command.UNKNOWN) {
-                        insertValueIfPossible(receivedCommand);
-                    }
-                    break;
-                case MESSAGE_DEVICE_NAME:
-                    String connectedDeviceName = msg.getData().getString(DEVICE_NAME);
-                    Toast.makeText(getApplicationContext(), "Connected to "
-                            + connectedDeviceName, Toast.LENGTH_SHORT).show();
-                    break;
-                case MESSAGE_TOAST:
-                    Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
-                            Toast.LENGTH_SHORT).show();
-                    break;
-            }
+                break;
+            case MESSAGE_READ:
+                int bytes = msg.arg1;
+                byte[] readBuf = Arrays.copyOfRange(((byte[]) msg.obj), 0, bytes);
+                Toast.makeText(MainActivity.this, new String(readBuf), Toast.LENGTH_LONG).show();
+                CommandParser.Command receivedCommand = CommandParser.parseValue(readBuf);
+                if (receivedCommand != CommandParser.Command.UNKNOWN) {
+                    insertValueIfPossible(receivedCommand);
+                }
+                break;
+            case MESSAGE_DEVICE_NAME:
+                String connectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                Toast.makeText(getApplicationContext(), "Connected to "
+                        + connectedDeviceName, Toast.LENGTH_SHORT).show();
+                break;
+            case MESSAGE_TOAST:
+                Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
+                        Toast.LENGTH_SHORT).show();
+                break;
         }
-    };
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -156,9 +158,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //TODO remove mock on release
-        for (int i = 1; i <= 5; i++) {
-            new Handler(Looper.getMainLooper()).postDelayed(this::getMockOutput, i * 10000);
-        }
+//        for (int i = 1; i <= 5; i++) {
+//            new Handler(Looper.getMainLooper()).postDelayed(this::getMockOutput, i * 10000);
+//        }
     }
 
     public void onScanButtonClick(View v) {
