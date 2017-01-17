@@ -24,10 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
     private BluetoothService bluetoothService;
 
-    //        public static final String WEB_VIEW_LOAD_URL = "file:///android_asset/temp.html";
     public static final String WEB_VIEW_LOAD_URL = "http://shout-ed.com/itmstest";
-    private static final String[] POSSIBLE_IDS = new String[]{"\"tread1\"", "\"tread2\"", "\"tread3\"", "\"tread4\"", "\"psi\""};
-    private static final String ACTIVE_ELEMENT_ID_EQUALS_TEMPLATE = "activeElement.name === ";
 
     private WebView webView;
 
@@ -188,22 +185,10 @@ public class MainActivity extends AppCompatActivity {
     private void insertValueIfPossible(CommandParser.Command command) {
         webView.evaluateJavascript("(function (){\n" +
                 "var activeElement = document.activeElement;" +
-                "if(" + buildCheckIdString() + "){\n" +
+                "if(activeElement.name.indexOf(\"" + command.getTagName() + "\") == 0){\n" +
                 "activeElement.value=" + command.getValue() + ";\n" +
                 "}" +
                 "return activeElement.name})()", value -> Log.d(TAG, value));
-    }
-
-    private String buildCheckIdString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < POSSIBLE_IDS.length; i++) {
-            stringBuilder.append(ACTIVE_ELEMENT_ID_EQUALS_TEMPLATE)
-                    .append(POSSIBLE_IDS[i]);
-            if (i < POSSIBLE_IDS.length - 1) {
-                stringBuilder.append(" || ");
-            }
-        }
-        return stringBuilder.toString();
     }
 
     @Override

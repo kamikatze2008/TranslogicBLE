@@ -4,8 +4,14 @@ import java.util.Arrays;
 
 public class CommandParser {
     enum Command {
-        PRESSURE, DEPTH, UNKNOWN;
+        PRESSURE("psi"), DEPTH("tread"), UNKNOWN("");
+
         private Double value;
+        private String tagName;
+
+        Command(String tagName) {
+            this.tagName = tagName;
+        }
 
         public void setValue(Double value) {
             this.value = value;
@@ -13,6 +19,10 @@ public class CommandParser {
 
         public Double getValue() {
             return value;
+        }
+
+        public String getTagName() {
+            return tagName;
         }
     }
 
