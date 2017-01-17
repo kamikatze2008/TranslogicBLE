@@ -368,7 +368,6 @@ public class BluetoothService {
             }
             mmInStream = tmpIn;
             mmOutStream = tmpOut;
-            write(CommandParser.setDepthMeasurementSystemMMCommand());
         }
 
         public void run() {
