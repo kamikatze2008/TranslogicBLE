@@ -90,20 +90,6 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void sendMessage(String message) {
-        // Check that we're actually connected before trying anything
-        if (bluetoothService.getState() != BluetoothService.STATE_CONNECTED) {
-            Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        // Check that there's actually something to send
-        if (message.length() > 0) {
-            // Get the message bytes and tell the BluetoothChatService to write
-            byte[] send = message.getBytes();
-            bluetoothService.write(send);
-        }
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
