@@ -4,14 +4,14 @@ import java.util.Arrays;
 
 public class CommandParser {
     enum Command {
-        PARAMETERS, MEASUREMENT, UNKNOWN;
-        private String value;
+        PRESSURE, DEPTH, UNKNOWN;
+        private Double value;
 
-        public void setValue(String value) {
+        public void setValue(Double value) {
             this.value = value;
         }
 
-        public String getValue() {
+        public Double getValue() {
             return value;
         }
     }
@@ -38,13 +38,21 @@ public class CommandParser {
 
     public static Command parseValue(byte[] bytes) {
         Command command;
-        if (bytes.length >= 8) {
-            command = Command.PARAMETERS;
-            command.setValue(new String(Arrays.copyOfRange(bytes, 3, 7)));
-        } else if (bytes.length >= 5) {
-            command = Command.MEASUREMENT;
-            command.setValue(new String(Arrays.copyOfRange(bytes, 3, 5)));
-        } else command = Command.UNKNOWN;
-        return command;
+        if (bytes != null && bytes.length >= 7
+                && bytes[0] == (byte) (0xa2 & 0xff) && bytes[bytes.length - 1] == (byte) (0xa7 & 0xff)) {
+            switch (bytes[1]) {
+                case 'P':
+                    command = Command.PRESSURE;
+                    break;
+                case 'T':
+                    command = Command.DEPTH;
+                    break;
+                default:
+                    return Command.UNKNOWN;
+            }
+            command.setValue(Double.parseDouble(new String(Arrays.copyOfRange(bytes, 2, bytes.length - 1))) / 100);
+            return command;
+        }
+        return Command.UNKNOWN;
     }
 }

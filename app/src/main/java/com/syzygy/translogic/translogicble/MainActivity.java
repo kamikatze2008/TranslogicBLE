@@ -76,28 +76,18 @@ public class MainActivity extends AppCompatActivity {
                     byte[] readBuf = Arrays.copyOfRange(((byte[]) msg.obj), 0, bytes);
                     Toast.makeText(MainActivity.this, new String(readBuf), Toast.LENGTH_LONG).show();
                     CommandParser.Command receivedCommand = CommandParser.parseValue(readBuf);
-                    switch (receivedCommand) {
-                        case PARAMETERS:
-                            insertValueIfPossible(receivedCommand.getValue());
-                            break;
-                        case MEASUREMENT:
-                            //TODO
-                            break;
+                    if (receivedCommand != CommandParser.Command.UNKNOWN) {
+                        insertValueIfPossible(receivedCommand);
                     }
-                    // construct a string from the valid bytes in the buffer
-//                    String readMessage = new String(readBuf, 0, msg.arg1);
-//                    mAdapter.notifyDataSetChanged();
-//                    messageList.add(new androidRecyclerView.Message(counter++, readMessage, mConnectedDeviceName));
                     break;
                 case MESSAGE_DEVICE_NAME:
-                    // save the connected device's name
-//                    mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-//                    Toast.makeText(getApplicationContext(), "Connected to "
-//                            + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                    String connectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                    Toast.makeText(getApplicationContext(), "Connected to "
+                            + connectedDeviceName, Toast.LENGTH_SHORT).show();
                     break;
                 case MESSAGE_TOAST:
-//                    Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
-//                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
+                            Toast.LENGTH_SHORT).show();
                     break;
             }
         }
@@ -173,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
             bluetoothService.start();
         }
 
-        //FIXME add normal scan
+        //TODO remove mock on release
         for (int i = 1; i <= 5; i++) {
             new Handler(Looper.getMainLooper()).postDelayed(this::getMockOutput, i * 10000);
         }
@@ -190,22 +180,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getMockOutput() {
-        transferMessageToOutputString(new byte[]{
-                (byte) (0xa2 & 0xff), 0x50, (byte) (0xa5 & 0xff), 0x30, 0x30, 0x30, 0x32, (byte) (0xa7 & 0xff)
-        });
+        CommandParser.Command command = CommandParser.Command.PRESSURE;
+        command.setValue(24.56);
+        insertValueIfPossible(command);
     }
 
-    private void transferMessageToOutputString(byte[] bytes) {
-        if (bytes != null) {
-            insertValueIfPossible("2");
-        }
-    }
-
-    private void insertValueIfPossible(String receivedValue) {
+    private void insertValueIfPossible(CommandParser.Command command) {
         webView.evaluateJavascript("(function (){\n" +
                 "var activeElement = document.activeElement;" +
                 "if(" + buildCheckIdString() + "){\n" +
-                "activeElement.value=" + receivedValue + ";\n" +
+                "activeElement.value=" + command.getValue() + ";\n" +
                 "}" +
                 "return activeElement.name})()", value -> Log.d(TAG, value));
     }
