@@ -42,11 +42,25 @@ public class DeviceListActivity extends Activity {
         // one for newly discovered devices
         mPairedDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_name);
         mNewDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_name);
+        // Get the local Bluetooth adapter
+        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
         // Initialize the button to perform device discovery
         Button scanButton = (Button) findViewById(R.id.button_scan);
         scanButton.setOnClickListener(v -> {
             mPairedDevicesArrayAdapter.clear();
             mNewDevicesArrayAdapter.clear();
+            // Get a set of currently paired devices
+            Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
+            // If there are paired devices, add each one to the ArrayAdapter
+            if (pairedDevices.size() > 0) {
+                findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
+                for (BluetoothDevice device : pairedDevices) {
+                    mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                }
+            } else {
+                String noDevices = getResources().getText(R.string.none_paired).toString();
+                mPairedDevicesArrayAdapter.add(noDevices);
+            }
             doDiscovery();
         });
         // Find and set up the ListView for paired devices
@@ -62,8 +76,6 @@ public class DeviceListActivity extends Activity {
         // Register for broadcasts when discovery has finished
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(mReceiver, filter);
-        // Get the local Bluetooth adapter
-        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
         // Get a set of currently paired devices
         Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
         // If there are paired devices, add each one to the ArrayAdapter

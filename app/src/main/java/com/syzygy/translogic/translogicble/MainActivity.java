@@ -16,6 +16,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import java.util.Arrays;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -70,7 +72,9 @@ public class MainActivity extends AppCompatActivity {
 //                    messageList.add(new androidRecyclerView.Message(counter++, writeMessage, "Me"));
                     break;
                 case MESSAGE_READ:
-                    byte[] readBuf = (byte[]) msg.obj;
+                    int bytes = msg.arg1;
+                    byte[] readBuf = Arrays.copyOfRange(((byte[]) msg.obj), 0, bytes);
+                    Toast.makeText(MainActivity.this, new String(readBuf), Toast.LENGTH_LONG).show();
                     CommandParser.Command receivedCommand = CommandParser.parseValue(readBuf);
                     switch (receivedCommand) {
                         case PARAMETERS:

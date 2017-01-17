@@ -361,11 +361,11 @@ public class BluetoothService {
             try {
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
-                write(CommandParser.setDepthMeasurementSystemMMCommand());
             } catch (IOException e) {
             }
             mmInStream = tmpIn;
             mmOutStream = tmpOut;
+            write(CommandParser.setDepthMeasurementSystemMMCommand());
         }
 
         public void run() {
