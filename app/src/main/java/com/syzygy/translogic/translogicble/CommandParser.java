@@ -1,9 +1,7 @@
 package com.syzygy.translogic.translogicble;
 
-import java.util.Arrays;
-
 public class CommandParser {
-    enum Command {
+    public enum Command {
         PRESSURE("psi"), DEPTH("tread"), UNKNOWN("");
 
         private Double value;
@@ -48,21 +46,21 @@ public class CommandParser {
 
     public static Command parseValue(byte[] bytes) {
         Command command;
-        if (bytes != null && bytes.length >= 7
-                && bytes[0] == (byte) (0xa2 & 0xff) && bytes[bytes.length - 1] == (byte) (0xa7 & 0xff)) {
-            switch (bytes[1]) {
-                case 'P':
-                    command = Command.PRESSURE;
-                    break;
-                case 'T':
-                    command = Command.DEPTH;
-                    break;
-                default:
-                    return Command.UNKNOWN;
-            }
-            command.setValue(Double.parseDouble(new String(Arrays.copyOfRange(bytes, 2, bytes.length - 1))) / 100);
-            return command;
+//        if (bytes != null && bytes.length >= 7
+//                && bytes[0] == (byte) (0xa2 & 0xff) && bytes[bytes.length - 1] == (byte) (0xa7 & 0xff)) {
+        switch (bytes[0]) {
+            case 'P':
+                command = Command.PRESSURE;
+                break;
+            case 'T':
+                command = Command.DEPTH;
+                break;
+            default:
+                return Command.UNKNOWN;
         }
-        return Command.UNKNOWN;
+//            command.setValue(Double.parseDouble(new String(Arrays.copyOfRange(bytes, 2, bytes.length - 1))) / 100);
+        return command;
+//        }
+//        return Command.UNKNOWN;
     }
 }

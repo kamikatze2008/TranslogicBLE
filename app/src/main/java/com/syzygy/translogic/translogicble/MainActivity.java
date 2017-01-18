@@ -27,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String WEB_VIEW_LOAD_URL = "http://shout-ed.com/itmstest";
 
     private WebView webView;
+    private CommandParser.Command command;
 
     // Message types sent from the BluetoothChatService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -75,9 +76,18 @@ public class MainActivity extends AppCompatActivity {
                 int bytes = msg.arg1;
                 byte[] readBuf = Arrays.copyOfRange(((byte[]) msg.obj), 0, bytes);
                 Toast.makeText(MainActivity.this, new String(readBuf), Toast.LENGTH_LONG).show();
-                CommandParser.Command receivedCommand = CommandParser.parseValue(readBuf);
-                if (receivedCommand != CommandParser.Command.UNKNOWN) {
-                    insertValueIfPossible(receivedCommand);
+                if (bytes == 1) {
+                    command = CommandParser.parseValue(readBuf);
+                } else if (bytes > 1 && command != null && command != CommandParser.Command.UNKNOWN) {
+                    try {
+                        command.setValue(Double.valueOf(new String(readBuf)));
+                    } catch (NumberFormatException e) {
+                        command = null;
+                        return;
+                    }
+                    CommandParser.Command tempCommand = command;
+                    insertValueIfPossible(tempCommand);
+                    command = null;
                 }
                 break;
             case MESSAGE_DEVICE_NAME:
