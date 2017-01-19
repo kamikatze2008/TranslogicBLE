@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelUuid;
 
@@ -97,7 +98,7 @@ public class BluetoothService {
                 mAcceptThread.start();
             }
         } else {
-            new Handler().postDelayed(() -> connect(bluetoothDevice, true), 30000);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> connect(bluetoothDevice, true), 30000);
         }
         setState(STATE_LISTEN);
     }
@@ -227,7 +228,7 @@ public class BluetoothService {
         msg.setData(bundle);
         mHandler.sendMessage(msg);
         if (bluetoothDevice != null) {
-            new Handler().postDelayed(() -> connect(bluetoothDevice, true), 30000);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> connect(bluetoothDevice, true), 30000);
         }
     }
 
