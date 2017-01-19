@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.ParcelUuid;
+import android.preference.PreferenceManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +47,9 @@ public class BluetoothService {
     public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
 
+    private Context context;
+    private static final String BLUETOOTH_DEVICE_MAC_ADDRESS = "BLUETOOTH_DEVICE_MAC_ADDRESS";
+
     /**
      * Constructor. Prepares a new BluetoothChat session.
      *
@@ -56,6 +60,7 @@ public class BluetoothService {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
         mHandler = handler;
+        this.context = context;
     }
 
     /**
@@ -91,6 +96,11 @@ public class BluetoothService {
             mConnectedThread.cancel();
             mConnectedThread = null;
         }
+        String bluetoothDeviceMacAddress = PreferenceManager.getDefaultSharedPreferences(context)
+                .getString(BLUETOOTH_DEVICE_MAC_ADDRESS, null);
+        if (bluetoothDeviceMacAddress != null) {
+            bluetoothDevice = mAdapter.getRemoteDevice(bluetoothDeviceMacAddress);
+        }
         // Start the thread to listen on a BluetoothServerSocket
         if (bluetoothDevice == null) {
             if (mAcceptThread == null) {
@@ -112,7 +122,11 @@ public class BluetoothService {
         if (isReconnect && bluetoothDevice == null) {
             return;
         } else if (!isReconnect) {
-            bluetoothDevice = null;
+            bluetoothDevice = device;
+            PreferenceManager.getDefaultSharedPreferences(context)
+                    .edit()
+                    .putString(BLUETOOTH_DEVICE_MAC_ADDRESS, BLUETOOTH_DEVICE_MAC_ADDRESS)
+                    .apply();
         }
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
@@ -396,7 +410,6 @@ public class BluetoothService {
                     mHandler.obtainMessage(MainActivity.MESSAGE_READ, bytes, -1, buffer)
                             .sendToTarget();
                 } catch (IOException e) {
-                    bluetoothDevice = mmSocket.getRemoteDevice();
                     connectionLost();
                     break;
                 }
