@@ -7,7 +7,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebChromeClient;
@@ -117,8 +119,26 @@ public class MainActivity extends AppCompatActivity {
             webView.getSettings().setJavaScriptEnabled(true);
             webView.getSettings().setUseWideViewPort(true);
             webView.getSettings().setLoadWithOverviewMode(true);
+            webView.getSettings().setDomStorageEnabled(true);
             webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
             webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    if (url.contains("login.php")) {
+                        Log.d(TAG, "start");
+                        Log.d(TAG, url);
+                        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+                        String uniqueId = "" + Settings.Secure.ANDROID_ID + telephonyManager.getDeviceId();
+                        view.evaluateJavascript("(function(){" +
+                                "var deviceName = document.getElementById(\"fingerprint\");" +
+                                "if(deviceName!=null){" +
+                                "deviceName.value=\"" + uniqueId + "\";" +
+                                "}" +
+                                "})()", value -> Log.d(TAG, "finish"));
+                    }
+                }
+
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url) {
                     if (url != null) {
@@ -217,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
                     // Get the BLuetoothDevice object
                     BluetoothDevice device = btAdapter.getRemoteDevice(address);
                     // Attempt to connect to the device
-                    bluetoothService.connect(device);
+                    bluetoothService.connect(device, false);
                 }
                 break;
             case REQUEST_ENABLE_BT:

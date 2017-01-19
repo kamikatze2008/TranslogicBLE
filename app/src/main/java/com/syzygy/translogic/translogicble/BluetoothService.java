@@ -37,6 +37,7 @@ public class BluetoothService {
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
     private int mState;
+    private BluetoothDevice bluetoothDevice;
 
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;       // we're doing nothing
@@ -90,9 +91,13 @@ public class BluetoothService {
             mConnectedThread = null;
         }
         // Start the thread to listen on a BluetoothServerSocket
-        if (mAcceptThread == null) {
-            mAcceptThread = new AcceptThread();
-            mAcceptThread.start();
+        if (bluetoothDevice == null) {
+            if (mAcceptThread == null) {
+                mAcceptThread = new AcceptThread();
+                mAcceptThread.start();
+            }
+        } else {
+            new Handler().postDelayed(() -> connect(bluetoothDevice, true), 30000);
         }
         setState(STATE_LISTEN);
     }
@@ -102,7 +107,12 @@ public class BluetoothService {
      *
      * @param device The BluetoothDevice to connect
      */
-    public synchronized void connect(BluetoothDevice device) {
+    public synchronized void connect(BluetoothDevice device, boolean isReconnect) {
+        if (isReconnect && bluetoothDevice == null) {
+            return;
+        } else if (!isReconnect) {
+            bluetoothDevice = null;
+        }
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
             if (mConnectThread != null) {
@@ -216,6 +226,9 @@ public class BluetoothService {
         bundle.putString(MainActivity.TOAST, "Device connection was lost");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
+        if (bluetoothDevice != null) {
+            new Handler().postDelayed(() -> connect(bluetoothDevice, true), 30000);
+        }
     }
 
     /**
@@ -382,6 +395,7 @@ public class BluetoothService {
                     mHandler.obtainMessage(MainActivity.MESSAGE_READ, bytes, -1, buffer)
                             .sendToTarget();
                 } catch (IOException e) {
+                    bluetoothDevice = mmSocket.getRemoteDevice();
                     connectionLost();
                     break;
                 }
