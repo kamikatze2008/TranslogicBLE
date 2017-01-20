@@ -38,7 +38,7 @@ public class BluetoothService {
     private AcceptThread mAcceptThread;
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
-    private int mState;
+    private volatile int mState;
     private BluetoothDevice bluetoothDevice;
 
     // Constants that indicate the current connection state
@@ -49,6 +49,7 @@ public class BluetoothService {
 
     private Context context;
     private static final String BLUETOOTH_DEVICE_MAC_ADDRESS = "BLUETOOTH_DEVICE_MAC_ADDRESS";
+    private static final int RECONNECTION_DELAY = 30000;
 
     /**
      * Constructor. Prepares a new BluetoothChat session.
@@ -96,21 +97,31 @@ public class BluetoothService {
             mConnectedThread.cancel();
             mConnectedThread = null;
         }
-        String bluetoothDeviceMacAddress = PreferenceManager.getDefaultSharedPreferences(context)
-                .getString(BLUETOOTH_DEVICE_MAC_ADDRESS, null);
-        if (bluetoothDeviceMacAddress != null) {
-            bluetoothDevice = mAdapter.getRemoteDevice(bluetoothDeviceMacAddress);
-        }
         // Start the thread to listen on a BluetoothServerSocket
-        if (bluetoothDevice == null) {
-            if (mAcceptThread == null) {
-                mAcceptThread = new AcceptThread();
-                mAcceptThread.start();
-            }
-        } else {
-            new Handler(Looper.getMainLooper()).postDelayed(() -> connect(bluetoothDevice, true), 30000);
+        if (mAcceptThread == null) {
+            mAcceptThread = new AcceptThread();
+            mAcceptThread.start();
         }
         setState(STATE_LISTEN);
+    }
+
+    public void reconnectIfPossibleOrStart(boolean useDelayOnReconnection) {
+        if (mState == STATE_NONE || mState == STATE_LISTEN) {
+            String bluetoothDeviceMacAddress = PreferenceManager.getDefaultSharedPreferences(context)
+                    .getString(BLUETOOTH_DEVICE_MAC_ADDRESS, null);
+            if (bluetoothDeviceMacAddress != null) {
+                bluetoothDevice = mAdapter.getRemoteDevice(bluetoothDeviceMacAddress);
+                if (bluetoothDevice != null) {
+                    if (!useDelayOnReconnection) {
+                        connect(bluetoothDevice, true);
+                    } else {
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> connect(bluetoothDevice, true), RECONNECTION_DELAY);
+                    }
+                    return;
+                }
+            }
+            start();
+        }
     }
 
     /**
@@ -119,9 +130,13 @@ public class BluetoothService {
      * @param device The BluetoothDevice to connect
      */
     public synchronized void connect(BluetoothDevice device, boolean isReconnect) {
-        if (isReconnect && bluetoothDevice == null) {
+        if (isReconnect && (mState == STATE_CONNECTED || mState == STATE_CONNECTING)) {
             return;
         } else if (!isReconnect) {
+            PreferenceManager.getDefaultSharedPreferences(context)
+                    .edit()
+                    .putString(BLUETOOTH_DEVICE_MAC_ADDRESS, null)
+                    .apply();
             bluetoothDevice = null;
         }
         // Cancel any thread attempting to make a connection
@@ -237,9 +252,7 @@ public class BluetoothService {
         bundle.putString(MainActivity.TOAST, "Device connection was lost");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
-        if (bluetoothDevice != null) {
-            new Handler(Looper.getMainLooper()).postDelayed(() -> connect(bluetoothDevice, true), 30000);
-        }
+        reconnectIfPossibleOrStart(true);
     }
 
     /**
@@ -352,7 +365,9 @@ public class BluetoothService {
                 } catch (IOException e2) {
                 }
                 // Start the service over to restart listening mode
-                BluetoothService.this.start();
+                setState(STATE_LISTEN);
+//                BluetoothService.this.start();
+                BluetoothService.this.reconnectIfPossibleOrStart(true);
                 return;
             }
             // Reset the ConnectThread because we're done

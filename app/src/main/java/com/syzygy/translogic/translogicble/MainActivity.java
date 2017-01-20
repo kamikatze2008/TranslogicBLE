@@ -177,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         if (!btAdapter.isEnabled()) {
             sendRequestBTIntent();
-        } else {
+        } else if (bluetoothService == null) {
             bluetoothService = new BluetoothService(this, handler);
         }
     }
@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (bluetoothService != null && bluetoothService.getState() == BluetoothService.STATE_NONE) {
-            bluetoothService.start();
+            bluetoothService.reconnectIfPossibleOrStart(false);
         }
 
         //TODO remove mock on release
