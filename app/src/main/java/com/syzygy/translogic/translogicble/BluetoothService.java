@@ -122,11 +122,7 @@ public class BluetoothService {
         if (isReconnect && bluetoothDevice == null) {
             return;
         } else if (!isReconnect) {
-            bluetoothDevice = device;
-            PreferenceManager.getDefaultSharedPreferences(context)
-                    .edit()
-                    .putString(BLUETOOTH_DEVICE_MAC_ADDRESS, BLUETOOTH_DEVICE_MAC_ADDRESS)
-                    .apply();
+            bluetoothDevice = null;
         }
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
@@ -396,6 +392,10 @@ public class BluetoothService {
             }
             mmInStream = tmpIn;
             mmOutStream = tmpOut;
+            PreferenceManager.getDefaultSharedPreferences(context)
+                    .edit()
+                    .putString(BLUETOOTH_DEVICE_MAC_ADDRESS, mmSocket.getRemoteDevice().getAddress())
+                    .apply();
         }
 
         public void run() {
