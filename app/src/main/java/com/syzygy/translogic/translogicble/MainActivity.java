@@ -140,14 +140,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                @Override
-                public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    if (url != null) {
-                        url = url.replace("inspector.php", "inspector3.php");
-                    }
-                    webView.loadUrl(url);
-                    return true;
-                }
+//                @Override
+//                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+//                    if (url != null) {
+//                        url = url.replace("inspector.php", "inspector3.php");
+//                    }
+//                    webView.loadUrl(url);
+//                    return true;
+//                }
             });
             webView.setWebChromeClient(new WebChromeClient());
             webView.loadUrl(WEB_VIEW_LOAD_URL);
