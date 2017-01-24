@@ -117,10 +117,10 @@ public class BluetoothService {
                     } else {
                         new Handler(Looper.getMainLooper()).postDelayed(() -> connect(bluetoothDevice, true), RECONNECTION_DELAY);
                     }
-                    return;
+//                    return;
                 }
             }
-            start();
+//            start();
         }
     }
 
