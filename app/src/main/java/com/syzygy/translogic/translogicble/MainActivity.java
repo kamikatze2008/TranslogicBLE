@@ -120,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
             webView.getSettings().setUseWideViewPort(true);
             webView.getSettings().setLoadWithOverviewMode(true);
             webView.getSettings().setDomStorageEnabled(true);
+            webView.getSettings().setBuiltInZoomControls(true);
             webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
             webView.setWebViewClient(new WebViewClient() {
                 @Override
