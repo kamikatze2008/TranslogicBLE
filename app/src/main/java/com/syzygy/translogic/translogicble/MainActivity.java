@@ -129,7 +129,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.d(TAG, "start");
                         Log.d(TAG, url);
                         TelephonyManager telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-                        String uniqueId = "" + Settings.Secure.ANDROID_ID + telephonyManager.getDeviceId();
+                        String uniqueId = "" + Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID) + telephonyManager.getDeviceId();
+                        Log.d(TAG, uniqueId);
                         view.evaluateJavascript("(function(){" +
                                 "var deviceName = document.getElementById(\"fingerprint\");" +
                                 "if(deviceName!=null){" +
