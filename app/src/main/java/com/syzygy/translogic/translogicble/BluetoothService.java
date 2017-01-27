@@ -333,11 +333,14 @@ public class BluetoothService {
             // given BluetoothDevice
             try {
                 ParcelUuid[] parcelUuids = device.getUuids();
+
+                //TODO remove toast
                 Message msg = mHandler.obtainMessage(MainActivity.MESSAGE_TOAST);
                 Bundle bundle = new Bundle();
                 bundle.putString(MainActivity.TOAST, Arrays.toString(parcelUuids));
                 msg.setData(bundle);
                 mHandler.sendMessage(msg);
+
                 if (parcelUuids != null && parcelUuids[0] != null) {
                     tmp = device.createRfcommSocketToServiceRecord(parcelUuids[0].getUuid());
                 } else {
