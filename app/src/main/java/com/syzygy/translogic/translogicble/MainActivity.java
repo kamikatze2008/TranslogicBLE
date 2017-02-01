@@ -1,13 +1,17 @@
 package com.syzygy.translogic.translogicble;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -49,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     // Intent request codes
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
+    private static final int REQUEST_READ_PHONE_PERMISSIONS = 3;
 
     private IncomingHandler handler = new IncomingHandler(this);
 
@@ -121,30 +126,41 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         if (webView == null) {
-            webView = (WebView) findViewById(R.id.web_view);
-            webView.getSettings().setJavaScriptEnabled(true);
-            webView.getSettings().setUseWideViewPort(true);
-            webView.getSettings().setLoadWithOverviewMode(true);
-            webView.getSettings().setDomStorageEnabled(true);
-            webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
-            webView.setWebViewClient(new WebViewClient() {
-                @Override
-                public void onPageFinished(WebView view, String url) {
-                    super.onPageFinished(view, url);
-                    if (url.contains("login.php")) {
-                        Log.d(TAG, "start");
-                        Log.d(TAG, url);
-                        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-                        String uniqueId = "" + Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID) + telephonyManager.getDeviceId();
-                        Log.d(TAG, uniqueId);
-                        view.evaluateJavascript("(function(){" +
-                                "var deviceName = document.getElementById(\"fingerprint\");" +
-                                "if(deviceName!=null){" +
-                                "deviceName.value=\"" + uniqueId + "\";" +
-                                "}" +
-                                "})()", value -> Log.d(TAG, "finish"));
-                    }
+            int permissionCheck = ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.READ_PHONE_STATE);
+            if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                initWebView();
+            }
+        } else {
+            webView.restoreState(savedInstanceState);
+        }
+    }
+
+    private void initWebView() {
+        webView = (WebView) findViewById(R.id.web_view);
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setUseWideViewPort(true);
+        webView.getSettings().setLoadWithOverviewMode(true);
+        webView.getSettings().setDomStorageEnabled(true);
+        webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (url.contains("login.php")) {
+                    Log.d(TAG, "start");
+                    Log.d(TAG, url);
+                    TelephonyManager telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+                    String uniqueId = "" + Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID) + telephonyManager.getDeviceId();
+                    Log.d(TAG, uniqueId);
+                    view.evaluateJavascript("javascript:(function(){" +
+                            "var deviceName = document.getElementById(\"fingerprint\");" +
+                            "if(deviceName!=null){" +
+                            "deviceName.value=\"" + uniqueId + "\";" +
+                            "}" +
+                            "})()", value -> Log.d(TAG, "finish"));
                 }
+            }
 
 //                @Override
 //                public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -154,12 +170,9 @@ public class MainActivity extends AppCompatActivity {
 //                    webView.loadUrl(url);
 //                    return true;
 //                }
-            });
-            webView.setWebChromeClient(new WebChromeClient());
-            webView.loadUrl(WEB_VIEW_LOAD_URL);
-        } else {
-            webView.restoreState(savedInstanceState);
-        }
+        });
+        webView.setWebChromeClient(new WebChromeClient());
+        webView.loadUrl(WEB_VIEW_LOAD_URL);
     }
 
     @Override
@@ -184,16 +197,37 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         if (!btAdapter.isEnabled()) {
             sendRequestBTIntent();
+            return;
         } else if (bluetoothService == null) {
             bluetoothService = new BluetoothService(this, handler);
         }
     }
 
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        Log.d(TAG, "PERMISSIONS RESULT");
+//        if (requestCode == REQUEST_READ_PHONE_PERMISSIONS) {
+//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                initWebView();
+//                return;
+//            }
+//            finish();
+//        }
+//    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        int permissionCheck = ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.READ_PHONE_STATE);
+        if (permissionCheck == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_PHONE_STATE},
+                    REQUEST_READ_PHONE_PERMISSIONS);
+        }
         if (bluetoothService != null && bluetoothService.getState() == BluetoothService.STATE_NONE) {
-            bluetoothService.reconnectIfPossibleOrStart(false);
+//            bluetoothService.reconnectIfPossibleOrStart(false);
         }
 
         //TODO remove mock on release
