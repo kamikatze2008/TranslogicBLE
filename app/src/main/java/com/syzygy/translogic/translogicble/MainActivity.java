@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -131,8 +132,6 @@ public class MainActivity extends AppCompatActivity {
             if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
                 initWebView();
             }
-        } else {
-            webView.restoreState(savedInstanceState);
         }
     }
 
@@ -197,24 +196,22 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         if (!btAdapter.isEnabled()) {
             sendRequestBTIntent();
-            return;
         } else if (bluetoothService == null) {
             bluetoothService = new BluetoothService(this, handler);
         }
     }
 
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        Log.d(TAG, "PERMISSIONS RESULT");
-//        if (requestCode == REQUEST_READ_PHONE_PERMISSIONS) {
-//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                initWebView();
-//                return;
-//            }
-//            finish();
-//        }
-//    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_READ_PHONE_PERMISSIONS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                initWebView();
+                return;
+            }
+            System.exit(0);
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -227,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
                     REQUEST_READ_PHONE_PERMISSIONS);
         }
         if (bluetoothService != null && bluetoothService.getState() == BluetoothService.STATE_NONE) {
-//            bluetoothService.reconnectIfPossibleOrStart(false);
+            bluetoothService.reconnectIfPossibleOrStart(false);
         }
 
         //TODO remove mock on release
@@ -259,12 +256,6 @@ public class MainActivity extends AppCompatActivity {
                 "activeElement.value=" + command.getValue() + ";\n" +
                 "}" +
                 "return activeElement.name})()", value -> Log.d(TAG, value));
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        webView.saveState(outState);
     }
 
     @Override
