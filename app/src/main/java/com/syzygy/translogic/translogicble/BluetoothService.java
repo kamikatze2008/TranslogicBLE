@@ -117,10 +117,10 @@ public class BluetoothService {
                     } else {
                         new Handler(Looper.getMainLooper()).postDelayed(() -> connect(bluetoothDevice, true), RECONNECTION_DELAY);
                     }
-//                    return;
+                    return;
                 }
             }
-//            start();
+            start();
         }
     }
 
@@ -428,6 +428,7 @@ public class BluetoothService {
                     mHandler.obtainMessage(MainActivity.MESSAGE_READ, bytes, -1, buffer)
                             .sendToTarget();
                 } catch (IOException e) {
+                    cancel();
                     connectionLost();
                     break;
                 }
