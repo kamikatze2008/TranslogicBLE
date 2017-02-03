@@ -87,9 +87,6 @@ public class MainActivity extends AppCompatActivity {
                 int bytes = msg.arg1;
                 byte[] readBuf = Arrays.copyOfRange(((byte[]) msg.obj), 0, bytes);
 
-                //TODO remove toast
-                Toast.makeText(MainActivity.this, new String(readBuf), Toast.LENGTH_LONG).show();
-
                 if (bytes == 1 && command == null) {
                     command = CommandParser.parseValue(readBuf);
                 } else if (bytes > 0 && command != null && command != CommandParser.Command.UNKNOWN) {
