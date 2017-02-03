@@ -32,9 +32,9 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothService bluetoothService;
 
     //testURL
-    public static final String WEB_VIEW_LOAD_URL = "http://shout-ed.com/itmstest";
+//    public static final String WEB_VIEW_LOAD_URL = "http://shout-ed.com/itmstest";
     //realURL
-//    public static final String WEB_VIEW_LOAD_URL = "https://app.itmsretail.net.au";
+    public static final String WEB_VIEW_LOAD_URL = "http://app.itmsretail.net.au";
 
     private WebView webView;
     private CommandParser.Command command;
