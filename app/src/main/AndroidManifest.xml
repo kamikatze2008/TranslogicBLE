@@ -10,7 +10,7 @@
     <application
         android:name=".MainApplication"
         android:allowBackup="false"
-        android:icon="@mipmap/itmsr_icon"
+        android:icon="@mipmap/itmsr_icon2"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
