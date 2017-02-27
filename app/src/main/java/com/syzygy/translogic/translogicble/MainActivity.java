@@ -38,11 +38,14 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
     private BluetoothService bluetoothService;
 
-    //testURL
+//test client URL
 //    public static final String WEB_VIEW_LOAD_URL = "http://www.shout-ed.com/itmstest/uploadtest.php";
-    public static final String WEB_VIEW_LOAD_URL = "https://unsplash.polarr.co";
+
+//photo client URL
+//    public static final String WEB_VIEW_LOAD_URL = "https://unsplash.polarr.co";
+
     //realURL
-//    public static final String WEB_VIEW_LOAD_URL = "http://app.itmsretail.net.au";
+    public static final String WEB_VIEW_LOAD_URL = "http://app.itmsretail.net.au";
 
     private WebView webView;
     private CommandParser.Command command;
