@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -196,7 +197,20 @@ public class MainActivity extends AppCompatActivity {
                 File file = new File(filePath);
                 Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
                 captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(file));
-                MainActivity.this.startActivityForResult(captureIntent, CAPTURE_RESULTCODE);
+//                MainActivity.this.startActivityForResult(captureIntent, CAPTURE_RESULTCODE);
+
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("image/*");
+                // Create file chooser intent
+                Intent chooserIntent = Intent.createChooser(i, getString(R.string.chooser_intent_string));
+
+                // Set camera intent to file chooser
+                chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS
+                        , new Parcelable[]{captureIntent});
+
+                // On select image call onActivityResult method of activity
+                startActivityForResult(chooserIntent, CAPTURE_RESULTCODE);
                 return true;
             }
         });
@@ -334,9 +348,13 @@ public class MainActivity extends AppCompatActivity {
                     if (resultCode != RESULT_OK && !new File(filePath).exists()) {
                         this.mUploadMessage.onReceiveValue(null);
                     } else {
-                        ContentValues values = new ContentValues();
-                        values.put(MediaStore.Images.Media.DATA, this.filePath);
-                        mUploadMessage.onReceiveValue(new Uri[]{getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)});
+                        Uri uri = data.getData();
+                        if (uri == null) {
+                            ContentValues values = new ContentValues();
+                            values.put(MediaStore.Images.Media.DATA, this.filePath);
+                            uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                        }
+                        mUploadMessage.onReceiveValue(new Uri[]{uri});
                     }
                     this.mUploadMessage = null;
                 }
