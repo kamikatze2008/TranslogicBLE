@@ -4,11 +4,15 @@ import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -17,11 +21,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
@@ -32,9 +38,10 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothService bluetoothService;
 
     //testURL
-//    public static final String WEB_VIEW_LOAD_URL = "http://shout-ed.com/itmstest";
+//    public static final String WEB_VIEW_LOAD_URL = "http://www.shout-ed.com/itmstest/uploadtest.php";
+    public static final String WEB_VIEW_LOAD_URL = "https://unsplash.polarr.co";
     //realURL
-    public static final String WEB_VIEW_LOAD_URL = "http://app.itmsretail.net.au";
+//    public static final String WEB_VIEW_LOAD_URL = "http://app.itmsretail.net.au";
 
     private WebView webView;
     private CommandParser.Command command;
@@ -54,7 +61,11 @@ public class MainActivity extends AppCompatActivity {
     // Intent request codes
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
-    private static final int REQUEST_READ_PHONE_PERMISSIONS = 3;
+    private static final int REQUEST_PERMISSIONS = 3;
+    private final static int CAPTURE_RESULTCODE = 4;
+
+    private ValueCallback<Uri[]> mUploadMessage;
+    private String filePath;
 
     private IncomingHandler handler = new IncomingHandler(this);
 
@@ -124,9 +135,16 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         if (webView == null) {
-            int permissionCheck = ContextCompat.checkSelfPermission(this,
+            int phoneStatePermissionCheck = ContextCompat.checkSelfPermission(this,
                     Manifest.permission.READ_PHONE_STATE);
-            if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            int readExternalStoragePermissionCheck = ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE);
+            int writeExternalStoragePermissionCheck = ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+            if (phoneStatePermissionCheck == PackageManager.PERMISSION_GRANTED &&
+                    readExternalStoragePermissionCheck == PackageManager.PERMISSION_GRANTED &&
+                    writeExternalStoragePermissionCheck == PackageManager.PERMISSION_GRANTED) {
                 initWebView();
             }
         }
@@ -139,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+        webView.getSettings().setAllowFileAccess(true);
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -167,7 +186,20 @@ public class MainActivity extends AppCompatActivity {
 //                    return true;
 //                }
         });
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                mUploadMessage = filePathCallback;
+                File imageStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), getString(R.string.app_name));
+                imageStorageDir.mkdirs();
+                filePath = imageStorageDir + "IMG_" + String.valueOf(System.currentTimeMillis()) + ".jpg";
+                File file = new File(filePath);
+                Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(file));
+                MainActivity.this.startActivityForResult(captureIntent, CAPTURE_RESULTCODE);
+                return true;
+            }
+        });
         webView.loadUrl(WEB_VIEW_LOAD_URL);
     }
 
@@ -201,10 +233,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_READ_PHONE_PERMISSIONS) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                initWebView();
-                return;
+        if (requestCode == REQUEST_PERMISSIONS) {
+            if (grantResults.length > 0) {
+                boolean isAllGranted = true;
+                for (int grantResult : grantResults) {
+                    if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                        isAllGranted = false;
+                        break;
+                    }
+                }
+                if (isAllGranted) {
+                    initWebView();
+                    return;
+                }
             }
             System.exit(0);
         }
@@ -213,12 +254,20 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        int permissionCheck = ContextCompat.checkSelfPermission(MainActivity.this,
+        int phoneStatePermissionCheck = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.READ_PHONE_STATE);
-        if (permissionCheck == PackageManager.PERMISSION_DENIED) {
+        int readExternalStoragePermissionCheck = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE);
+        int writeExternalStoragePermissionCheck = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (phoneStatePermissionCheck == PackageManager.PERMISSION_DENIED
+                || readExternalStoragePermissionCheck == PackageManager.PERMISSION_DENIED
+                || writeExternalStoragePermissionCheck == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_PHONE_STATE},
-                    REQUEST_READ_PHONE_PERMISSIONS);
+                    new String[]{Manifest.permission.READ_PHONE_STATE,
+                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    REQUEST_PERMISSIONS);
         }
         if (bluetoothService != null && bluetoothService.getState() == BluetoothService.STATE_NONE) {
             bluetoothService.reconnectIfPossibleOrStart(false);
@@ -279,6 +328,20 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
                     finish();
                 }
+
+            case CAPTURE_RESULTCODE: {
+                if (mUploadMessage != null) {
+                    if (resultCode != RESULT_OK && !new File(filePath).exists()) {
+                        this.mUploadMessage.onReceiveValue(null);
+                    } else {
+                        ContentValues values = new ContentValues();
+                        values.put(MediaStore.Images.Media.DATA, this.filePath);
+                        mUploadMessage.onReceiveValue(new Uri[]{getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)});
+                    }
+                    this.mUploadMessage = null;
+                }
+            }
+            break;
         }
     }
 }
