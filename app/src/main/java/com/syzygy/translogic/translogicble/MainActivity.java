@@ -317,6 +317,9 @@ public class MainActivity extends AppCompatActivity {
                 "var activeElement = document.activeElement;" +
                 "if(activeElement.name.indexOf(\"" + command.getTagName() + "\") == 0){\n" +
                 "activeElement.value=" + command.getValue() + ";\n" +
+                "var e = document.createEvent('HTMLEvents');\n" +
+                "e.initEvent('keyup', false, true);\n" +
+                "activeElement.dispatchEvent(e);" +
                 "}" +
                 "return activeElement.name})()", value -> Log.d(TAG, value));
     }
