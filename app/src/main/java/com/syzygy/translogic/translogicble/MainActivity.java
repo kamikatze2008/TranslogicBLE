@@ -351,7 +351,10 @@ public class MainActivity extends AppCompatActivity {
                     if (resultCode != RESULT_OK && !new File(filePath).exists()) {
                         this.mUploadMessage.onReceiveValue(null);
                     } else {
-                        Uri uri = data.getData();
+                        Uri uri = null;
+                        if (data != null) {
+                            uri = data.getData();
+                        }
                         if (uri == null) {
                             ContentValues values = new ContentValues();
                             values.put(MediaStore.Images.Media.DATA, this.filePath);
